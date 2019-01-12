@@ -1,11 +1,8 @@
 extern crate minigrep;
 
-use std::env;
-use std::error::Error;
-use std::fs::File;
-use std::io::prelude::*;
-use std::process;
 use minigrep::Config;
+use std::env;
+use std::process;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
