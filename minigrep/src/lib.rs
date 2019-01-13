@@ -1,8 +1,12 @@
+//! # Minigrep
+//! `minigrep` is the best grepping utility no money can buy.
 use std::env;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 
+/// Takes a query and a file to search through.
+/// `minigrep someword somefile.txt`
 pub fn run(config: Config) -> Result<(), Box<Error>> {
     let mut f = File::open(config.filename)?;
 
