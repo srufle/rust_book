@@ -4,6 +4,14 @@ use std::time::Duration;
 fn main() {
     join_thread();
     simple_thread();
+    move_closure();
+}
+fn move_closure(){
+    let v = vec![1,2,3];
+    let handle = thread::spawn( move || {
+        println!("Here is vector, victor {:?}", v);
+    });
+    handle.join().unwrap();
 }
 fn join_thread() {
     let handle = thread::spawn(|| {
