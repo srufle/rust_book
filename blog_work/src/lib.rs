@@ -19,6 +19,8 @@ impl Post {
         self.state.as_ref().unwrap().content(&self)
     }
 
+    // If there were more of these type methods 
+    // looking into using macros, might be useful
     pub fn request_review(&mut self) {
         if let Some(s) = self.state.take() {
             self.state = Some(s.request_review())
