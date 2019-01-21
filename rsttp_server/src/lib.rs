@@ -1,34 +1,57 @@
+use std::sync::mpsc;
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::thread;
 
-pub struct ThreadPool{
-    threads: Vec<thread::JoinHandle<()>>,
+pub struct ThreadPool {
+    workers: Vec<Worker>,
+    sender: mpsc::Sender<Job>,
 }
 
-impl ThreadPool{
+struct Job;
+
+impl ThreadPool {
     /// Create a new ThreadPool.
-    /// 
+    ///
     /// The size is the number of threads in the pool.
-    /// 
-    /// #Panics
-    /// 
+    ///
+    /// #Panics.
+    ///
     /// The `new` function will panic if the size is zero.
 
-    pub fn new(size: usize) -> ThreadPool{
+    pub fn new(size: usize) -> ThreadPool {
         assert!(size > 0);
 
-        let mut threads = Vec::with_capacity(size);
+        let (sender, receiver) = mpsc::channel();
 
-        for _ in 0..size {
-            // create  threads here
+        let receiver = Arc::new(Mutex::new(receiver));
+
+        let mut workers = Vec::with_capacity(size);
+
+        for id in 0..size {
+            workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
 
-        ThreadPool{
-            threads
-        }
+        ThreadPool { workers, sender }
     }
     pub fn execute<F>(&self, f: F)
-        where
-            F: FnOnce() + Send + 'static
+    where
+        F: FnOnce() + Send + 'static,
     {
+    }
+}
+
+struct Worker {
+    id: usize,
+    thread: thread::JoinHandle<()>,
+}
+
+impl Worker {
+    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
+        let thread = thread::spawn(|| {
+            receiver;
+        });
+
+        Worker { id, thread }
     }
 }
