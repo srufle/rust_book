@@ -7,6 +7,10 @@ pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: mpsc::Sender<Job>,
 }
+enum Message {
+    NewJob(Job),
+    Terminate,
+}
 
 type Job = Box<FnBox + Send + 'static>;
 
@@ -42,27 +46,34 @@ impl ThreadPool {
         self.sender.send(job).unwrap();
     }
 }
-
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        for worker in &mut self.workers {
+            println!("Shutting down worker {}", worker.id);
+            if let Some(thread) = worker.thread.take() {
+                thread.join().unwrap();
+            }
+        }
+    }
+}
 struct Worker {
     id: usize,
-    thread: thread::JoinHandle<()>,
+    // thread: thread::JoinHandle<()>,
+    thread: Option<thread::JoinHandle<()>>,
 }
- trait FnBox{
-     fn call_box(self: Box<Self>);
- }
- impl <F: FnOnce()> FnBox for F {
+trait FnBox {
+    fn call_box(self: Box<Self>);
+}
+impl<F: FnOnce()> FnBox for F {
     fn call_box(self: Box<F>) {
         (*self)()
     }
- }
+}
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
         let thread = thread::spawn(move || {
-            loop{
-                let job = receiver.lock()
-                .unwrap()
-                .recv()
-                .unwrap();
+            loop {
+                let job = receiver.lock().unwrap().recv().unwrap();
 
                 println!("Worker {} got a job; executing.", id);
                 // (*job)();
@@ -70,6 +81,9 @@ impl Worker {
             }
         });
 
-        Worker { id, thread }
+        Worker {
+            id,
+            thread: Some(thread),
+        }
     }
 }
